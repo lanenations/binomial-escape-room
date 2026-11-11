@@ -1,0 +1,1379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AP Statistics: Binomial Championship Escape Room</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- FontAwesome Icons CDN -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <!-- Canvas Confetti CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+  <!-- KaTeX for rendering AP Stat Math Formulas -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js"></script>
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            stadium: {
+              900: '#0B0F19',
+              800: '#111827',
+              700: '#1F2937',
+              600: '#374151'
+            },
+            turf: {
+              500: '#10B981',
+              600: '#059669',
+              700: '#047857'
+            },
+            trophy: {
+              400: '#FBBF24',
+              500: '#F59E0B',
+              600: '#D97706'
+            }
+          },
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace']
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap');
+    
+    body {
+      background-color: #080C14;
+      color: #F3F4F6;
+      font-family: 'Inter', sans-serif;
+    }
+
+    /* Stadium Glow Effects */
+    .stadium-glow {
+      box-shadow: 0 0 25px rgba(16, 185, 129, 0.15);
+    }
+    
+    .gold-glow {
+      box-shadow: 0 0 20px rgba(245, 158, 11, 0.25);
+    }
+
+    .pulse-urgent {
+      animation: pulse-red 1.5s infinite;
+    }
+
+    @keyframes pulse-red {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+      50% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+    }
+
+    /* Custom Scrollbars */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0B0F19;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #374151;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #4B5563;
+    }
+
+    @media print {
+      .no-print { display: none !important; }
+      .print-only { display: block !important; }
+      body { background: white; color: black; }
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between selection:bg-turf-500 selection:text-white">
+
+  <!-- TOP HEADER / SCOREBOARD BAR -->
+  <header class="bg-stadium-900 border-b border-stadium-700 sticky top-0 z-40 shadow-xl no-print">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex flex-wrap items-center justify-between gap-4">
+      
+      <!-- Logo & Title -->
+      <div class="flex items-center space-x-3">
+        <div class="w-10 h-10 rounded-lg bg-turf-500/20 border border-turf-500 flex items-center justify-center text-turf-500 text-xl font-bold">
+          <i class="fa-solid fa-trophy"></i>
+        </div>
+        <div>
+          <div class="flex items-center space-x-2">
+            <h1 class="text-lg font-extrabold tracking-wide text-white uppercase">AP Stat Championship</h1>
+            <span class="text-xs px-2 py-0.5 rounded bg-emerald-900/60 border border-emerald-500/40 text-emerald-400 font-medium">CED Unit 2</span>
+          </div>
+          <p class="text-xs text-gray-400">Binomial Distributions Digital Escape Room</p>
+        </div>
+      </div>
+
+      <!-- TIMER CONTROL CENTER -->
+      <div class="flex items-center space-x-4 bg-stadium-800 border border-stadium-700 px-4 py-1.5 rounded-full shadow-inner" id="timerContainer">
+        <div class="flex items-center space-x-2">
+          <i class="fa-regular fa-clock text-turf-500" id="timerIcon"></i>
+          <span class="font-mono text-xl font-bold tracking-widest text-emerald-400" id="timerDisplay">45:00</span>
+        </div>
+        <div class="h-4 w-px bg-stadium-600"></div>
+        <div class="flex items-center space-x-1 text-xs">
+          <button id="toggleTimerBtn" class="p-1.5 hover:bg-stadium-700 rounded-full text-gray-300 hover:text-white transition" title="Play/Pause Timer">
+            <i class="fa-solid fa-pause" id="timerStateIcon"></i>
+          </button>
+          <button id="resetTimerBtn" class="p-1.5 hover:bg-stadium-700 rounded-full text-gray-300 hover:text-white transition" title="Reset Timer">
+            <i class="fa-solid fa-rotate-right"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- UTILITIES & QUICK ACTION BUTTONS -->
+      <div class="flex items-center space-x-3">
+        <!-- Audio Toggle Button -->
+        <button id="audioToggleBtn" class="flex items-center space-x-2 bg-stadium-800 hover:bg-stadium-700 border border-stadium-700 px-3 py-1.5 rounded-lg text-xs font-semibold text-gray-300 transition">
+          <i class="fa-solid fa-volume-high text-emerald-400" id="audioIcon"></i>
+          <span id="audioStatusText" class="hidden sm:inline">Sound ON</span>
+        </button>
+
+        <!-- Formula Sheet Drawer Toggle -->
+        <button id="openFormulaBtn" class="flex items-center space-x-2 bg-turf-600 hover:bg-turf-500 text-white px-3.5 py-1.5 rounded-lg text-xs font-bold transition shadow-lg stadium-glow">
+          <i class="fa-solid fa-square-root-variable"></i>
+          <span>Formula & Desmos Toolkit</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN CONTAINER -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-grow w-full">
+
+    <!-- VAULT COMBINATION HUD TRACKER -->
+    <section class="mb-6 bg-stadium-800/80 border border-stadium-700 rounded-2xl p-4 sm:p-5 backdrop-blur-md relative overflow-hidden stadium-glow">
+      <div class="flex flex-col md:flex-row items-center justify-between gap-4">
+        
+        <div class="flex items-center space-x-3 text-center md:text-left">
+          <div class="w-12 h-12 rounded-xl bg-trophy-500/10 border border-trophy-500/30 flex items-center justify-center text-trophy-400 text-2xl">
+            <i class="fa-solid fa-vault"></i>
+          </div>
+          <div>
+            <h2 class="text-sm font-bold text-gray-300 uppercase tracking-wider">Championship Vault Passcode</h2>
+            <p class="text-xs text-gray-400">Solve each room to reveal all 6 combination digits</p>
+          </div>
+        </div>
+
+        <!-- DIGIT DISPLAY SLOTS -->
+        <div class="flex items-center space-x-2 sm:space-x-3 font-mono">
+          <!-- Digit 1 -->
+          <div class="flex flex-col items-center">
+            <div id="digit-slot-1" class="w-10 h-14 sm:w-12 sm:h-16 rounded-xl bg-stadium-900 border-2 border-stadium-600 flex items-center justify-center text-2xl sm:text-3xl font-bold text-gray-500 transition-all duration-500 shadow-inner">
+              ?
+            </div>
+            <span class="text-[10px] text-gray-500 mt-1 uppercase">Rm 1</span>
+          </div>
+          <span class="text-gray-600 text-xl font-bold">-</span>
+          <!-- Digit 2 -->
+          <div class="flex flex-col items-center">
+            <div id="digit-slot-2" class="w-10 h-14 sm:w-12 sm:h-16 rounded-xl bg-stadium-900 border-2 border-stadium-600 flex items-center justify-center text-2xl sm:text-3xl font-bold text-gray-500 transition-all duration-500 shadow-inner">
+              ?
+            </div>
+            <span class="text-[10px] text-gray-500 mt-1 uppercase">Rm 2</span>
+          </div>
+          <span class="text-gray-600 text-xl font-bold">-</span>
+          <!-- Digit 3 -->
+          <div class="flex flex-col items-center">
+            <div id="digit-slot-3" class="w-10 h-14 sm:w-12 sm:h-16 rounded-xl bg-stadium-900 border-2 border-stadium-600 flex items-center justify-center text-2xl sm:text-3xl font-bold text-gray-500 transition-all duration-500 shadow-inner">
+              ?
+            </div>
+            <span class="text-[10px] text-gray-500 mt-1 uppercase">Rm 3</span>
+          </div>
+          <span class="text-gray-600 text-xl font-bold">-</span>
+          <!-- Digit 4 -->
+          <div class="flex flex-col items-center">
+            <div id="digit-slot-4" class="w-10 h-14 sm:w-12 sm:h-16 rounded-xl bg-stadium-900 border-2 border-stadium-600 flex items-center justify-center text-2xl sm:text-3xl font-bold text-gray-500 transition-all duration-500 shadow-inner">
+              ?
+            </div>
+            <span class="text-[10px] text-gray-500 mt-1 uppercase">Rm 4</span>
+          </div>
+          <span class="text-gray-600 text-xl font-bold">-</span>
+          <!-- Digit 5 -->
+          <div class="flex flex-col items-center">
+            <div id="digit-slot-5" class="w-10 h-14 sm:w-12 sm:h-16 rounded-xl bg-stadium-900 border-2 border-stadium-600 flex items-center justify-center text-2xl sm:text-3xl font-bold text-gray-500 transition-all duration-500 shadow-inner">
+              ?
+            </div>
+            <span class="text-[10px] text-gray-500 mt-1 uppercase">Rm 5</span>
+          </div>
+          <span class="text-gray-600 text-xl font-bold">-</span>
+          <!-- Digit 6 -->
+          <div class="flex flex-col items-center">
+            <div id="digit-slot-6" class="w-10 h-14 sm:w-12 sm:h-16 rounded-xl bg-stadium-900 border-2 border-stadium-600 flex items-center justify-center text-2xl sm:text-3xl font-bold text-gray-500 transition-all duration-500 shadow-inner">
+              ?
+            </div>
+            <span class="text-[10px] text-gray-500 mt-1 uppercase">Rm 6</span>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- PROGRESS BAR -->
+      <div class="mt-4 bg-stadium-900 h-2 rounded-full overflow-hidden border border-stadium-700">
+        <div id="overallProgressBar" class="bg-gradient-to-r from-turf-500 to-trophy-400 h-full w-0 transition-all duration-500"></div>
+      </div>
+    </section>
+
+    <!-- ROOM SELECTION NAVIGATION TABS -->
+    <div class="flex items-center space-x-2 overflow-x-auto pb-2 mb-6 scrollbar-none" id="roomTabs">
+      <!-- Generated dynamically by JS -->
+    </div>
+
+    <!-- ACTIVE ROOM CARD DISPLAY CONTAINER -->
+    <div id="roomContainer">
+      <!-- Dynamic Room Content Loaded via JS -->
+    </div>
+
+  </main>
+
+  <!-- FORMULA & DESMOS SIDE DRAWER MODAL -->
+  <div id="formulaDrawer" class="fixed inset-0 z-50 overflow-hidden hidden" aria-labelledby="slide-over-title" role="dialog" aria-modal="true">
+    <div class="absolute inset-0 bg-black/70 backdrop-blur-sm transition-opacity" id="closeFormulaBg"></div>
+
+    <div class="pointer-events-none fixed inset-y-0 right-0 flex max-w-full pl-10">
+      <div class="pointer-events-auto w-screen max-w-md transform transition ease-in-out duration-300 bg-stadium-900 border-l border-stadium-700 text-gray-200 shadow-2xl flex flex-col">
+        
+        <!-- Drawer Header -->
+        <div class="p-5 border-b border-stadium-700 bg-stadium-800 flex items-center justify-between">
+          <div class="flex items-center space-x-2 text-turf-500">
+            <i class="fa-solid fa-calculator text-lg"></i>
+            <h2 class="text-base font-bold text-white uppercase tracking-wider">Desmos Binomial Toolkit</h2>
+          </div>
+          <button id="closeFormulaBtn" class="text-gray-400 hover:text-white p-2 rounded-lg hover:bg-stadium-700">
+            <i class="fa-solid fa-xmark text-lg"></i>
+          </button>
+        </div>
+
+        <!-- Drawer Content Body -->
+        <div class="p-6 overflow-y-auto space-y-6 flex-1 text-sm">
+          
+          <!-- BINS Criteria Section -->
+          <div class="bg-stadium-800 rounded-xl p-4 border border-stadium-700">
+            <h3 class="text-xs font-bold uppercase tracking-wider text-turf-400 mb-2">B.I.N.S. Conditions for Binomial Setup</h3>
+            <ul class="space-y-1.5 text-xs text-gray-300">
+              <li><strong class="text-emerald-400">B - Binary:</strong> Outcomes are strictly Success ($S$) or Failure ($F$).</li>
+              <li><strong class="text-emerald-400">I - Independent:</strong> Each trial is independent of all others.</li>
+              <li><strong class="text-emerald-400">N - Number:</strong> The number of trials $n$ is fixed in advance.</li>
+              <li><strong class="text-emerald-400">S - Same $p$:</strong> Probability of success $p$ remains constant.</li>
+            </ul>
+          </div>
+
+          <!-- AP Formulas & Mean / SD -->
+          <div class="bg-stadium-800 rounded-xl p-4 border border-stadium-700 space-y-3">
+            <h3 class="text-xs font-bold uppercase tracking-wider text-trophy-400">AP Stat Formulas & Desmos Summary</h3>
+            
+            <div class="p-2.5 bg-stadium-900 rounded-lg border border-stadium-700">
+              <span class="text-xs font-semibold text-gray-400 block mb-1">Probability Function:</span>
+              <div class="katex-math text-center py-1 text-emerald-400">P(X = k) = \binom{n}{k} p^k (1-p)^{n-k}</div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-2">
+              <div class="p-2.5 bg-stadium-900 rounded-lg border border-stadium-700 text-center">
+                <span class="text-[11px] text-gray-400 block mb-1">Expected Value $\mu_X$</span>
+                <div class="katex-math text-yellow-400 font-mono text-xs">\mu_X = n \cdot p</div>
+                <span class="text-[10px] text-emerald-400 font-mono block mt-1">mean(binomdist(n,p))</span>
+              </div>
+              <div class="p-2.5 bg-stadium-900 rounded-lg border border-stadium-700 text-center">
+                <span class="text-[11px] text-gray-400 block mb-1">Standard Dev $\sigma_X$</span>
+                <div class="katex-math text-cyan-400 font-mono text-xs">\sigma_X = \sqrt{np(1-p)}</div>
+                <span class="text-[10px] text-cyan-400 font-mono block mt-1">stdev(binomdist(n,p))</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Desmos Commands & Min/Max Guide -->
+          <div class="bg-stadium-800 rounded-xl p-4 border border-stadium-700 space-y-3">
+            <h3 class="text-xs font-bold uppercase tracking-wider text-blue-400 flex items-center justify-between">
+              <span>Desmos Graphing Calculator Syntax</span>
+              <span class="text-[10px] bg-blue-900/60 text-blue-300 px-2 py-0.5 rounded">Desmos</span>
+            </h3>
+            
+            <div class="p-2.5 bg-stadium-900 rounded-lg border border-stadium-700">
+              <div class="font-mono text-emerald-400 font-bold text-xs mb-1">binomdist(n, p)</div>
+              <p class="text-xs text-gray-300">Check <strong class="text-white">"Find Cumulative Probability"</strong> in Desmos to reveal Min and Max inputs:</p>
+            </div>
+
+            <div class="space-y-2 text-xs">
+              <div class="p-2.5 bg-stadium-900 rounded-lg border border-stadium-700">
+                <div class="flex justify-between items-center text-amber-400 font-semibold mb-1">
+                  <span>Exact $P(X = k)$</span>
+                  <code class="font-mono text-[11px] text-gray-300">Min: k | Max: k</code>
+                </div>
+                <p class="text-[11px] text-gray-400">Set both Min and Max to $k$.</p>
+              </div>
+
+              <div class="p-2.5 bg-stadium-900 rounded-lg border border-stadium-700">
+                <div class="flex justify-between items-center text-emerald-400 font-semibold mb-1">
+                  <span>At Least $P(X \ge k)$</span>
+                  <code class="font-mono text-[11px] text-gray-300">Min: k | Max: n</code>
+                </div>
+                <p class="text-[11px] text-gray-400">Starts at $k$ and goes up to total trials $n$.</p>
+              </div>
+
+              <div class="p-2.5 bg-stadium-900 rounded-lg border border-stadium-700">
+                <div class="flex justify-between items-center text-cyan-400 font-semibold mb-1">
+                  <span>At Most $P(X \le k)$</span>
+                  <code class="font-mono text-[11px] text-gray-300">Min: 0 | Max: k</code>
+                </div>
+                <p class="text-[11px] text-gray-400">Starts at $0$ up to $k$.</p>
+              </div>
+
+              <div class="p-2.5 bg-stadium-900 rounded-lg border border-stadium-700">
+                <div class="flex justify-between items-center text-purple-400 font-semibold mb-1">
+                  <span>Fewer Than $P(X < k)$</span>
+                  <code class="font-mono text-[11px] text-gray-300">Min: 0 | Max: k - 1</code>
+                </div>
+                <p class="text-[11px] text-gray-400">Equivalent to $P(X \le k - 1)$.</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- INTERACTIVE DESMOS WIDGET -->
+          <div class="bg-stadium-800 rounded-xl p-4 border border-stadium-700 space-y-3">
+            <h3 class="text-xs font-bold uppercase tracking-wider text-purple-400 flex items-center justify-between">
+              <span>Interactive Desmos Calculator Simulator</span>
+              <span class="text-[10px] bg-purple-900/60 text-purple-300 px-2 py-0.5 rounded">Live Tool</span>
+            </h3>
+            
+            <div class="grid grid-cols-2 gap-2">
+              <div>
+                <label class="text-[10px] text-gray-400 block mb-1">Trials (n)</label>
+                <input type="number" id="desmos-n" class="w-full bg-stadium-900 border border-stadium-600 rounded px-2.5 py-1.5 text-xs text-white font-mono" placeholder="10" value="10">
+              </div>
+              <div>
+                <label class="text-[10px] text-gray-400 block mb-1">Probability (p)</label>
+                <input type="number" step="0.01" id="desmos-p" class="w-full bg-stadium-900 border border-stadium-600 rounded px-2.5 py-1.5 text-xs text-white font-mono" placeholder="0.80" value="0.80">
+              </div>
+              <div>
+                <label class="text-[10px] text-gray-400 block mb-1">Min Bounds</label>
+                <input type="number" id="desmos-min" class="w-full bg-stadium-900 border border-stadium-600 rounded px-2.5 py-1.5 text-xs text-white font-mono" placeholder="8" value="8">
+              </div>
+              <div>
+                <label class="text-[10px] text-gray-400 block mb-1">Max Bounds</label>
+                <input type="number" id="desmos-max" class="w-full bg-stadium-900 border border-stadium-600 rounded px-2.5 py-1.5 text-xs text-white font-mono" placeholder="8" value="8">
+              </div>
+            </div>
+
+            <button id="btnComputeDesmos" class="w-full bg-purple-700 hover:bg-purple-600 text-white rounded py-2 text-xs font-bold transition flex items-center justify-center space-x-1">
+              <i class="fa-solid fa-calculator"></i>
+              <span>Calculate in Desmos Syntax</span>
+            </button>
+
+            <div id="desmosOutput" class="p-3 bg-stadium-900 rounded-lg text-xs font-mono border border-purple-500/30 text-purple-300 space-y-1.5">
+              <div class="text-[11px] text-gray-400">Desmos Command Preview:</div>
+              <div class="text-emerald-400 font-bold" id="desmosCmdPreview">binomdist(10, 0.8)</div>
+              <div class="flex justify-between border-t border-stadium-700 pt-1 text-gray-200">
+                <span>Probability:</span>
+                <span id="desmosProbResult" class="font-bold text-trophy-400">0.3020</span>
+              </div>
+              <div class="flex justify-between text-gray-400 text-[11px]">
+                <span>Mean (μ): <strong id="desmosMeanResult" class="text-yellow-400">8.0</strong></span>
+                <span>SD (σ): <strong id="desmosSdResult" class="text-cyan-400">1.2649</strong></span>
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CERTIFICATE PRINT MODAL -->
+  <div id="certificateModal" class="fixed inset-0 z-50 overflow-y-auto hidden bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+    <div class="bg-white text-gray-900 rounded-2xl max-w-3xl w-full p-8 shadow-2xl relative border-4 border-trophy-500">
+      
+      <button id="closeCertBtn" class="no-print absolute top-4 right-4 text-gray-500 hover:text-gray-800 text-xl font-bold p-2">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+
+      <!-- Printable Certificate Canvas / View -->
+      <div id="certificateContent" class="text-center space-y-6 py-4 px-2 border-2 border-dashed border-gray-300 p-6 rounded-xl">
+        <div class="flex justify-center items-center space-x-3 mb-2">
+          <i class="fa-solid fa-trophy text-trophy-500 text-4xl"></i>
+          <span class="text-xs tracking-widest text-gray-500 uppercase font-bold block">AP Statistics Excellence</span>
+          <i class="fa-solid fa-trophy text-trophy-500 text-4xl"></i>
+        </div>
+
+        <h1 class="text-3xl font-extrabold text-gray-900 uppercase tracking-wide">Certificate of Accomplishment</h1>
+        <p class="text-sm text-gray-600">This certifies that</p>
+        
+        <div class="border-b-2 border-gray-900 inline-block px-8 py-1">
+          <h2 id="certStudentName" class="text-2xl font-bold text-emerald-700 italic">AP Stat Student Master</h2>
+        </div>
+
+        <p class="text-sm text-gray-700 max-w-lg mx-auto leading-relaxed">
+          has successfully cracked all 6 vaults in the <strong>Binomial Distributions Championship Escape Room</strong>, demonstrating mastery of Binomial Probability, Mean, and Standard Deviation (AP Statistics CED Unit 2).
+        </p>
+
+        <div class="grid grid-cols-3 gap-4 max-w-md mx-auto pt-4 border-t border-gray-200">
+          <div>
+            <span class="text-[10px] uppercase text-gray-500 block">Final Status</span>
+            <span class="font-mono text-base font-bold text-emerald-600">UNLOCKED</span>
+          </div>
+          <div>
+            <span class="text-[10px] uppercase text-gray-500 block">Completion Time</span>
+            <span id="certTimeTaken" class="font-mono text-base font-bold text-gray-900">32:15</span>
+          </div>
+          <div>
+            <span class="text-[10px] uppercase text-gray-500 block">Mastery Score</span>
+            <span id="certScore" class="font-mono text-base font-bold text-emerald-600">100% (6/6)</span>
+          </div>
+        </div>
+
+        <div class="pt-6 flex justify-between items-end text-xs text-gray-500">
+          <div class="text-left">
+            <div class="h-8 border-b border-gray-400 w-32 mb-1"></div>
+            <span>Instructor Signature</span>
+          </div>
+          <div>
+            <span id="certDate">Date: November 2026</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Cert Action Buttons -->
+      <div class="mt-6 flex justify-center space-x-4 no-print">
+        <button onclick="window.print()" class="bg-turf-600 hover:bg-turf-700 text-white font-bold px-6 py-2.5 rounded-lg shadow-lg flex items-center space-x-2 transition">
+          <i class="fa-solid fa-print"></i>
+          <span>Print / Save PDF Certificate</span>
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <footer class="bg-stadium-900 border-t border-stadium-800 py-3 text-center text-xs text-gray-500 no-print">
+    <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
+      <p>AP Statistics — Unit 2: Probability & Random Variables (Binomial Distributions)</p>
+      <p class="font-mono">Desmos Binomial Challenge</p>
+    </div>
+  </footer>
+
+  <!-- SCRIPT ENGINE -->
+  <script>
+    // ==========================================
+    // ROOM DATA SPECIFICATIONS (DESMOS ALIGNED)
+    // ==========================================
+    const ROOMS = [
+      {
+        id: 1,
+        sport: 'Basketball',
+        icon: 'fa-basketball',
+        title: 'Room 1: Basketball Free Throws',
+        skill: 'Exact Probability P(X = k)',
+        digit: '4',
+        digitIndex: 0,
+        acceptedAnswers: ['0.3020', '0.302'],
+        hint: 'In Desmos: use binomdist(10, 0.80) with Find Cumulative Probability checked and set Min: 8, Max: 8.',
+        scenario: `Steph Curry is lining up for free throws during the championship quarter. His historical free-throw average is 80% ($p = 0.80$). Assuming each shot is independent, in a series of $n = 10$ free-throw attempts, calculate the probability that Steph makes <strong>exactly 8 free throws</strong>.`,
+        question: `What is the probability Steph makes exactly 8 out of 10 free throws? (Round your final answer to 4 decimal places).`,
+        solution: `
+          <div class="space-y-3">
+            <div class="p-3 bg-emerald-950/40 border border-emerald-500/40 rounded-xl">
+              <h4 class="font-bold text-emerald-400 text-xs uppercase tracking-wide mb-1"><i class="fa-solid fa-check-double mr-1"></i> 1. B.I.N.S. Conditions Check</h4>
+              <p class="text-xs text-gray-300"><b>B</b>inary (Make/Miss), <b>I</b>ndependent shots, <b>N</b> = 10 fixed shots, <b>S</b>ame probability $p = 0.80$. $X \\sim \\text{Binomial}(n=10, p=0.80)$.</p>
+            </div>
+            
+            <div>
+              <h4 class="font-bold text-gray-200 text-xs uppercase mb-1">2. Mathematical Calculation</h4>
+              <div class="katex-math bg-stadium-900 p-2 rounded text-emerald-300 text-sm">P(X = 8) = \\binom{10}{8} (0.80)^8 (0.20)^2 = 45 \\times 0.107374 \\times 0.04 = 0.301989... \\approx 0.3020</div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+              <div class="bg-stadium-900 p-2.5 rounded-lg border border-stadium-700">
+                <span class="text-gray-400 block font-semibold mb-1">Desmos Syntax:</span>
+                <code class="text-amber-400 font-mono">binomdist(10, 0.8)</code>
+                <span class="text-gray-400 block text-[11px] mt-0.5">Min: 8 | Max: 8</span>
+              </div>
+              <div class="bg-stadium-900 p-2.5 rounded-lg border border-stadium-700">
+                <span class="text-gray-400 block font-semibold mb-1">Unlocked Digit #1:</span>
+                <span class="text-trophy-400 font-mono font-bold text-base">4</span>
+              </div>
+            </div>
+          </div>
+        `
+      },
+      {
+        id: 2,
+        sport: 'Baseball',
+        icon: 'fa-baseball-bat-ball',
+        title: 'Room 2: Baseball At-Bats',
+        skill: 'Cumulative "At Least" P(X ≥ k)',
+        digit: '0',
+        digitIndex: 1,
+        acceptedAnswers: ['0.5722', '0.572', '0.57221'],
+        hint: 'In Desmos: use binomdist(8, 0.35) with Min: 3, Max: 8.',
+        scenario: `A baseball player has a $p = 0.35$ batting success rate. In a series of $n = 8$ independent at-bats, calculate the probability that he gets <strong>at least 3 hits</strong> ($P(X \\ge 3)$).`,
+        question: `Find $P(X \\ge 3)$ for $n = 8$ and $p = 0.35$. (Round to 4 decimal places).`,
+        solution: `
+          <div class="space-y-3">
+            <div class="p-3 bg-emerald-950/40 border border-emerald-500/40 rounded-xl">
+              <h4 class="font-bold text-emerald-400 text-xs uppercase tracking-wide mb-1"><i class="fa-solid fa-check-double mr-1"></i> Desmos Cumulative Strategy</h4>
+              <p class="text-xs text-gray-300">"At least 3 hits" includes $X = 3, 4, 5, 6, 7, 8$. In Desmos, set the cumulative bounds from 3 to 8.</p>
+            </div>
+
+            <div>
+              <h4 class="font-bold text-gray-200 text-xs uppercase mb-1">Mathematical Formula</h4>
+              <div class="katex-math bg-stadium-900 p-2 rounded text-emerald-300 text-sm">P(X \\ge 3) = 1 - P(X \\le 2) = 1 - 0.42779 = 0.57221... \\approx 0.5722</div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+              <div class="bg-stadium-900 p-2.5 rounded-lg border border-stadium-700">
+                <span class="text-gray-400 block font-semibold mb-1">Desmos Syntax:</span>
+                <code class="text-amber-400 font-mono">binomdist(8, 0.35)</code>
+                <span class="text-gray-400 block text-[11px] mt-0.5">Min: 3 | Max: 8</span>
+              </div>
+              <div class="bg-stadium-900 p-2.5 rounded-lg border border-stadium-700">
+                <span class="text-gray-400 block font-semibold mb-1">Unlocked Digit #2:</span>
+                <span class="text-trophy-400 font-mono font-bold text-base">0</span>
+              </div>
+            </div>
+          </div>
+        `
+      },
+      {
+        id: 3,
+        sport: 'Soccer',
+        icon: 'fa-futbol',
+        title: 'Room 3: Soccer Penalty Kicks',
+        skill: 'Expected Value (Binomial Mean μ)',
+        digit: '8',
+        digitIndex: 2,
+        acceptedAnswers: ['10.8', '10.80'],
+        hint: 'Use the formula μ = n * p or mean(binomdist(15, 0.72)) in Desmos.',
+        scenario: `A soccer star scores on penalty kicks with probability $p = 0.72$. Over a sample of $n = 15$ independent penalty kicks, calculate the <strong>expected number of goals ($\mu_X$)</strong> she will score.`,
+        question: `Calculate the expected value $\\mu_X = E(X)$.`,
+        solution: `
+          <div class="space-y-3">
+            <div class="p-3 bg-emerald-950/40 border border-emerald-500/40 rounded-xl">
+              <h4 class="font-bold text-emerald-400 text-xs uppercase tracking-wide mb-1"><i class="fa-solid fa-check-double mr-1"></i> Binomial Expected Value Formula</h4>
+              <p class="text-xs text-gray-300">The mean of a Binomial distribution $X \\sim \\text{Binomial}(n, p)$ is simply $n \\cdot p$.</p>
+            </div>
+
+            <div>
+              <h4 class="font-bold text-gray-200 text-xs uppercase mb-1">Calculation</h4>
+              <div class="katex-math bg-stadium-900 p-2 rounded text-yellow-300 text-sm">\\mu_X = n \\cdot p = 15 \\times 0.72 = 10.8\\text{ goals}</div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+              <div class="bg-stadium-900 p-2.5 rounded-lg border border-stadium-700">
+                <span class="text-gray-400 block font-semibold mb-1">Desmos Syntax:</span>
+                <code class="text-amber-400 font-mono">mean(binomdist(15, 0.72))</code>
+              </div>
+              <div class="bg-stadium-900 p-2.5 rounded-lg border border-stadium-700">
+                <span class="text-gray-400 block font-semibold mb-1">Unlocked Digit #3:</span>
+                <span class="text-trophy-400 font-mono font-bold text-base">8</span>
+              </div>
+            </div>
+          </div>
+        `
+      },
+      {
+        id: 4,
+        sport: 'Tennis',
+        icon: 'fa-table-tennis-paddle-ball',
+        title: 'Room 4: Tennis Aces',
+        skill: 'Standard Deviation σ',
+        digit: '3',
+        digitIndex: 3,
+        acceptedAnswers: ['2.14', '2.135', '2.1354'],
+        hint: 'Use standard deviation formula: σ = √(n * p * (1 - p)) or stdev(binomdist(25, 0.24)) in Desmos.',
+        scenario: `A tennis champion hits ace serves with probability $p = 0.24$. In a tournament set with $n = 25$ independent serves, calculate the <strong>standard deviation ($\sigma_X$)</strong> of aces served.`,
+        question: `What is the standard deviation $\\sigma_X$? (Round to 2 decimal places).`,
+        solution: `
+          <div class="space-y-3">
+            <div class="p-3 bg-emerald-950/40 border border-emerald-500/40 rounded-xl">
+              <h4 class="font-bold text-emerald-400 text-xs uppercase tracking-wide mb-1"><i class="fa-solid fa-check-double mr-1"></i> Standard Deviation Formula</h4>
+              <p class="text-xs text-gray-300">The standard deviation measures the typical distance outcomes fall from the mean.</p>
+            </div>
+
+            <div>
+              <h4 class="font-bold text-gray-200 text-xs uppercase mb-1">Calculation</h4>
+              <div class="katex-math bg-stadium-900 p-2 rounded text-cyan-300 text-sm">\\sigma_X = \\sqrt{n \\cdot p \\cdot (1 - p)} = \\sqrt{25 \\times 0.24 \\times 0.76} = \\sqrt{4.56} \\approx 2.1354 \\approx 2.14</div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+              <div class="bg-stadium-900 p-2.5 rounded-lg border border-stadium-700">
+                <span class="text-gray-400 block font-semibold mb-1">Desmos Syntax:</span>
+                <code class="text-amber-400 font-mono">stdev(binomdist(25, 0.24))</code>
+              </div>
+              <div class="bg-stadium-900 p-2.5 rounded-lg border border-stadium-700">
+                <span class="text-gray-400 block font-semibold mb-1">Unlocked Digit #4:</span>
+                <span class="text-trophy-400 font-mono font-bold text-base">3</span>
+              </div>
+            </div>
+          </div>
+        `
+      },
+      {
+        id: 5,
+        sport: 'Football',
+        icon: 'fa-football',
+        title: 'Room 5: Football Field Goals',
+        skill: 'Cumulative "Fewer Than" P(X < k)',
+        digit: '6',
+        digitIndex: 4,
+        acceptedAnswers: ['0.3691', '0.369', '0.3529', '0.353'],
+        hint: 'In Desmos: use binomdist(6, 0.65) with Min: 0, Max: 3.',
+        scenario: `A kicker completes long field goals with probability $p = 0.65$. Over $n = 6$ independent field goal attempts, calculate the probability that he completes <strong>fewer than 4 field goals</strong> ($P(X < 4)$).`,
+        question: `Find $P(X < 4)$, which equals $P(X \\le 3)$ for discrete binomial counts. (Round to 4 decimal places).`,
+        solution: `
+          <div class="space-y-3">
+            <div class="p-3 bg-emerald-950/40 border border-emerald-500/40 rounded-xl">
+              <h4 class="font-bold text-emerald-400 text-xs uppercase tracking-wide mb-1"><i class="fa-solid fa-check-double mr-1"></i> Desmos Bounds Translation</h4>
+              <p class="text-xs text-gray-300">"Fewer than 4" translates to $X \\le 3$. In Desmos, set Min: 0 and Max: 3.</p>
+            </div>
+
+            <div>
+              <h4 class="font-bold text-gray-200 text-xs uppercase mb-1">Desmos Command Setup</h4>
+              <div class="katex-math bg-stadium-900 p-2 rounded text-emerald-300 text-sm">P(X < 4) = P(X \\le 3) = \\text{binomdist}(6, 0.65) \\quad [\\text{Min: } 0, \\text{ Max: } 3] \\approx 0.3691</div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+              <div class="bg-stadium-900 p-2.5 rounded-lg border border-stadium-700">
+                <span class="text-gray-400 block font-semibold mb-1">Desmos Syntax:</span>
+                <code class="text-amber-400 font-mono">binomdist(6, 0.65)</code>
+                <span class="text-gray-400 block text-[11px] mt-0.5">Min: 0 | Max: 3</span>
+              </div>
+              <div class="bg-stadium-900 p-2.5 rounded-lg border border-stadium-700">
+                <span class="text-gray-400 block font-semibold mb-1">Unlocked Digit #5:</span>
+                <span class="text-trophy-400 font-mono font-bold text-base">6</span>
+              </div>
+            </div>
+          </div>
+        `
+      },
+      {
+        id: 6,
+        sport: 'Track & Field',
+        icon: 'fa-stopwatch-20',
+        title: 'Room 6: Track Relay False Starts',
+        skill: 'Cumulative "At Most" P(X ≤ k)',
+        digit: '5',
+        digitIndex: 5,
+        acceptedAnswers: ['0.7358', '0.736'],
+        hint: 'In Desmos: use binomdist(12, 0.15) with Min: 0, Max: 2.',
+        scenario: `In a track championship, false start warnings occur with probability $p = 0.15$ per heat. Across $n = 12$ independent heats, what is the probability of observing <strong>at most 2 false starts</strong> ($P(X \\le 2)$)?`,
+        question: `Find $P(X \\le 2)$ for $n = 12$ and $p = 0.15$. (Round to 4 decimal places).`,
+        solution: `
+          <div class="space-y-3">
+            <div class="p-3 bg-emerald-950/40 border border-emerald-500/40 rounded-xl">
+              <h4 class="font-bold text-emerald-400 text-xs uppercase tracking-wide mb-1"><i class="fa-solid fa-check-double mr-1"></i> Desmos Bounds Translation</h4>
+              <p class="text-xs text-gray-300">"At most 2" means $P(X \\le 2) = P(X=0) + P(X=1) + P(X=2)$.</p>
+            </div>
+
+            <div>
+              <h4 class="font-bold text-gray-200 text-xs uppercase mb-1">Desmos Output</h4>
+              <div class="katex-math bg-stadium-900 p-2 rounded text-emerald-300 text-sm">P(X \\le 2) = \\text{binomdist}(12, 0.15) \\quad [\\text{Min: } 0, \\text{ Max: } 2] = 0.735818... \\approx 0.7358</div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+              <div class="bg-stadium-900 p-2.5 rounded-lg border border-stadium-700">
+                <span class="text-gray-400 block font-semibold mb-1">Desmos Syntax:</span>
+                <code class="text-amber-400 font-mono">binomdist(12, 0.15)</code>
+                <span class="text-gray-400 block text-[11px] mt-0.5">Min: 0 | Max: 2</span>
+              </div>
+              <div class="bg-stadium-900 p-2.5 rounded-lg border border-stadium-700">
+                <span class="text-gray-400 block font-semibold mb-1">Unlocked Digit #6:</span>
+                <span class="text-trophy-400 font-mono font-bold text-base">5</span>
+              </div>
+            </div>
+          </div>
+        `
+      }
+    ];
+
+    const FULL_VAULT_CODE = "408365";
+
+    // ==========================================
+    // GLOBAL STATE MANAGEMENT
+    // ==========================================
+    let state = {
+      activeTab: 1, // 1-6 or 7 for Vault
+      solved: [false, false, false, false, false, false],
+      userAnswers: ['', '', '', '', '', ''],
+      attempts: [0, 0, 0, 0, 0, 0],
+      timerSeconds: 45 * 60,
+      timerRunning: true,
+      timerInterval: null,
+      soundEnabled: true,
+      vaultUnlocked: false,
+      startTime: Date.now()
+    };
+
+    // ==========================================
+    // AUDIO SYNTHESIZER (WEB AUDIO API)
+    // ==========================================
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    let audioCtx = null;
+
+    function initAudio() {
+      if (!audioCtx) {
+        audioCtx = new AudioCtx();
+      }
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+    }
+
+    function playSound(type) {
+      if (!state.soundEnabled) return;
+      try {
+        initAudio();
+        const now = audioCtx.currentTime;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+
+        if (type === 'success') {
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(523.25, now);
+          osc.frequency.exponentialRampToValueAtTime(659.25, now + 0.1);
+          osc.frequency.exponentialRampToValueAtTime(783.99, now + 0.2);
+          osc.frequency.exponentialRampToValueAtTime(1046.50, now + 0.3);
+          gain.gain.setValueAtTime(0.2, now);
+          gain.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
+          osc.start(now);
+          osc.stop(now + 0.5);
+        } else if (type === 'error') {
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(180, now);
+          osc.frequency.linearRampToValueAtTime(120, now + 0.2);
+          gain.gain.setValueAtTime(0.25, now);
+          gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+          osc.start(now);
+          osc.stop(now + 0.3);
+        } else if (type === 'victory') {
+          const notes = [523.25, 659.25, 783.99, 1046.50, 1318.51];
+          notes.forEach((freq, i) => {
+            const o = audioCtx.createOscillator();
+            const g = audioCtx.createGain();
+            o.type = 'triangle';
+            o.frequency.setValueAtTime(freq, now + i * 0.12);
+            g.connect(audioCtx.destination);
+            o.connect(g);
+            g.gain.setValueAtTime(0.2, now + i * 0.12);
+            g.gain.exponentialRampToValueAtTime(0.01, now + i * 0.12 + 0.4);
+            o.start(now + i * 0.12);
+            o.stop(now + i * 0.12 + 0.4);
+          });
+        }
+      } catch (e) {
+        console.error("Audio error", e);
+      }
+    }
+
+    // ==========================================
+    // MATH HELPER FUNCTIONS
+    // ==========================================
+    function nCr(n, r) {
+      if (r < 0 || r > n) return 0;
+      if (r === 0 || r === n) return 1;
+      if (r > n / 2) r = n - r;
+      let res = 1;
+      for (let i = 1; i <= r; i++) {
+        res = res * (n - i + 1) / i;
+      }
+      return res;
+    }
+
+    function binompdf(n, p, k) {
+      return nCr(n, k) * Math.pow(p, k) * Math.pow(1 - p, n - k);
+    }
+
+    // ==========================================
+    // UI RENDERERS
+    // ==========================================
+    function renderTabs() {
+      const container = document.getElementById('roomTabs');
+      let html = '';
+
+      ROOMS.forEach(room => {
+        const isSolved = state.solved[room.id - 1];
+        const isActive = state.activeTab === room.id;
+        
+        let activeClasses = isActive 
+          ? 'bg-stadium-700 text-white border-turf-500 shadow-md' 
+          : 'bg-stadium-800 text-gray-400 hover:bg-stadium-700/60 hover:text-gray-200 border-transparent';
+
+        html += `
+          <button onclick="switchTab(${room.id})" class="flex items-center space-x-2 px-3.5 py-2 rounded-xl text-xs font-semibold border transition-all duration-200 whitespace-nowrap ${activeClasses}">
+            <i class="fa-solid ${room.icon} ${isSolved ? 'text-turf-400' : 'text-gray-400'}"></i>
+            <span>Rm ${room.id}</span>
+            ${isSolved 
+              ? `<span class="w-4 h-4 rounded-full bg-turf-500/20 text-turf-400 flex items-center justify-center text-[10px] font-bold"><i class="fa-solid fa-check"></i></span>` 
+              : `<span class="w-4 h-4 rounded-full bg-stadium-900 text-gray-500 flex items-center justify-center text-[10px]">${room.id}</span>`}
+          </button>
+        `;
+      });
+
+      // Championship Vault Tab
+      const isVaultActive = state.activeTab === 7;
+      const allSolved = state.solved.every(Boolean);
+
+      html += `
+        <button onclick="switchTab(7)" class="flex items-center space-x-2 px-4 py-2 rounded-xl text-xs font-bold border transition-all duration-200 whitespace-nowrap ${
+          isVaultActive 
+            ? 'bg-trophy-500/20 text-trophy-400 border-trophy-500 shadow-lg gold-glow' 
+            : allSolved
+              ? 'bg-trophy-500/10 text-trophy-400 border-trophy-500/40 animate-pulse'
+              : 'bg-stadium-800 text-gray-400 hover:bg-stadium-700 border-transparent'
+        }">
+          <i class="fa-solid fa-vault"></i>
+          <span>FINAL VAULT</span>
+          ${state.vaultUnlocked ? `<i class="fa-solid fa-lock-open text-trophy-400"></i>` : `<i class="fa-solid fa-lock text-gray-500"></i>`}
+        </button>
+      `;
+
+      container.innerHTML = html;
+    }
+
+    function renderVaultSlots() {
+      ROOMS.forEach((room, idx) => {
+        const slotEl = document.getElementById(`digit-slot-${room.id}`);
+        if (state.solved[idx]) {
+          slotEl.innerText = room.digit;
+          slotEl.className = "w-10 h-14 sm:w-12 sm:h-16 rounded-xl bg-trophy-500/20 border-2 border-trophy-500 flex items-center justify-center text-2xl sm:text-3xl font-bold text-trophy-400 gold-glow font-mono transition-all duration-500 scale-105";
+        } else {
+          slotEl.innerText = "?";
+          slotEl.className = "w-10 h-14 sm:w-12 sm:h-16 rounded-xl bg-stadium-900 border-2 border-stadium-600 flex items-center justify-center text-2xl sm:text-3xl font-bold text-gray-500 shadow-inner font-mono";
+        }
+      });
+
+      const solvedCount = state.solved.filter(Boolean).length;
+      const pct = (solvedCount / 6) * 100;
+      document.getElementById('overallProgressBar').style.width = `${pct}%`;
+    }
+
+    function renderRoomContent() {
+      const container = document.getElementById('roomContainer');
+
+      // Vault Screen (Tab 7)
+      if (state.activeTab === 7) {
+        renderVaultScreen(container);
+        return;
+      }
+
+      // Standard Escape Room 1-6
+      const room = ROOMS[state.activeTab - 1];
+      const isSolved = state.solved[room.id - 1];
+
+      container.innerHTML = `
+        <div class="bg-stadium-800/90 border border-stadium-700 rounded-2xl p-6 sm:p-8 stadium-glow space-y-6">
+          
+          <!-- Room Header -->
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-stadium-700 pb-4">
+            <div class="flex items-center space-x-3">
+              <div class="w-12 h-12 rounded-xl bg-turf-500/10 border border-turf-500/30 flex items-center justify-center text-turf-400 text-2xl">
+                <i class="fa-solid ${room.icon}"></i>
+              </div>
+              <div>
+                <h2 class="text-xl font-extrabold text-white tracking-wide">${room.title}</h2>
+                <span class="text-xs font-semibold px-2.5 py-0.5 rounded bg-stadium-700 text-turf-400">${room.skill}</span>
+              </div>
+            </div>
+
+            <div class="flex items-center space-x-2">
+              <span class="text-xs text-gray-400">Attempts: <strong class="text-white">${state.attempts[room.id - 1]}</strong></span>
+              ${isSolved ? `
+                <span class="bg-turf-500/20 text-turf-400 border border-turf-500/50 px-3 py-1 rounded-full text-xs font-bold flex items-center space-x-1">
+                  <i class="fa-solid fa-circle-check"></i>
+                  <span>UNLOCKED DIGIT: [ ${room.digit} ]</span>
+                </span>
+              ` : `
+                <span class="bg-stadium-700 text-gray-400 px-3 py-1 rounded-full text-xs font-medium">
+                  <i class="fa-solid fa-lock mr-1"></i> Locked
+                </span>
+              `}
+            </div>
+          </div>
+
+          <!-- Scenario Card -->
+          <div class="bg-stadium-900/80 rounded-xl p-5 border border-stadium-700 space-y-3">
+            <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider">Stadium Play Setup</h3>
+            <p class="text-sm text-gray-200 leading-relaxed font-sans">${room.scenario}</p>
+          </div>
+
+          <!-- Question Box -->
+          <div class="bg-stadium-900 border-l-4 border-turf-500 p-4 rounded-r-xl">
+            <h3 class="text-xs font-bold text-turf-400 uppercase tracking-wide mb-1">Challenge Problem</h3>
+            <p class="text-base font-semibold text-white">${room.question}</p>
+          </div>
+
+          <!-- Input & Submit Form -->
+          <div class="space-y-4">
+            <form onsubmit="handleAnswerSubmit(event, ${room.id})" class="flex flex-col sm:flex-row items-stretch gap-3">
+              <div class="relative flex-1">
+                <input 
+                  type="text" 
+                  id="roomInput-${room.id}"
+                  value="${state.userAnswers[room.id - 1]}"
+                  ${isSolved ? 'disabled' : ''}
+                  placeholder="Enter decimal answer (e.g. 0.3020)" 
+                  class="w-full bg-stadium-900 border-2 ${isSolved ? 'border-turf-500 text-turf-400 font-bold' : 'border-stadium-600 focus:border-turf-500 text-white'} rounded-xl px-4 py-3 text-base font-mono focus:outline-none transition shadow-inner"
+                  autocomplete="off"
+                />
+              </div>
+
+              ${!isSolved ? `
+                <button type="submit" class="bg-turf-600 hover:bg-turf-500 text-white font-bold px-8 py-3 rounded-xl transition flex items-center justify-center space-x-2 shadow-lg stadium-glow">
+                  <i class="fa-solid fa-key"></i>
+                  <span>Unlock Digit</span>
+                </button>
+              ` : `
+                <button type="button" disabled class="bg-stadium-700 text-turf-400 font-bold px-8 py-3 rounded-xl flex items-center justify-center space-x-2 cursor-not-allowed">
+                  <i class="fa-solid fa-lock-open"></i>
+                  <span>Solved</span>
+                </button>
+              `}
+            </form>
+
+            <!-- Feedback Message Area -->
+            <div id="feedback-${room.id}" class="hidden transition-all duration-300"></div>
+
+            <!-- Hint Collapsible -->
+            ${!isSolved ? `
+              <div class="pt-2">
+                <button type="button" onclick="toggleHint(${room.id})" class="text-xs text-gray-400 hover:text-trophy-400 flex items-center space-x-1.5 transition">
+                  <i class="fa-regular fa-lightbulb text-trophy-400"></i>
+                  <span>Need a hint?</span>
+                </button>
+                <div id="hintBox-${room.id}" class="hidden mt-2 p-3 bg-stadium-900 border border-trophy-500/30 rounded-lg text-xs text-trophy-300">
+                  <i class="fa-solid fa-circle-info mr-1"></i> ${room.hint}
+                </div>
+              </div>
+            ` : ''}
+          </div>
+
+          <!-- WORKED SOLUTION BOX (ONLY Auto-Reveals AFTER Correct Answer) -->
+          ${isSolved ? `
+            <div class="mt-8 border-t border-stadium-700 pt-6 animate-fadeIn">
+              <div class="bg-stadium-900/90 border border-turf-500/40 rounded-2xl p-5 space-y-4">
+                <div class="flex items-center justify-between border-b border-stadium-700 pb-3">
+                  <div class="flex items-center space-x-2 text-turf-400 font-bold text-sm">
+                    <i class="fa-solid fa-graduation-cap text-lg"></i>
+                    <span>Official AP Statistics Solution & Verification</span>
+                  </div>
+                  <span class="text-[11px] bg-turf-500/20 text-turf-400 px-2 py-0.5 rounded font-mono">Digit Unlocked: ${room.digit}</span>
+                </div>
+                
+                <div class="text-gray-200">
+                  ${room.solution}
+                </div>
+              </div>
+            </div>
+          ` : ''}
+
+          <!-- Room Navigation Controls -->
+          <div class="flex items-center justify-between border-t border-stadium-700/60 pt-4 mt-6">
+            <button 
+              onclick="switchTab(${room.id > 1 ? room.id - 1 : 1})" 
+              ${room.id === 1 ? 'disabled class="opacity-40 cursor-not-allowed text-gray-500 flex items-center space-x-1 text-xs font-semibold"' : 'class="text-gray-300 hover:text-white flex items-center space-x-1.5 text-xs font-semibold"'}>
+              <i class="fa-solid fa-arrow-left"></i>
+              <span>Previous Room</span>
+            </button>
+
+            <span class="text-xs text-gray-400 font-mono">Room ${room.id} of 6</span>
+
+            <button 
+              onclick="switchTab(${room.id < 6 ? room.id + 1 : 7})" 
+              class="text-gray-300 hover:text-white flex items-center space-x-1.5 text-xs font-semibold">
+              <span>${room.id === 6 ? 'Final Vault' : 'Next Room'}</span>
+              <i class="fa-solid fa-arrow-right"></i>
+            </button>
+          </div>
+
+        </div>
+      `;
+
+      // Render Math using KaTeX after updating DOM
+      if (window.renderMathInElement) {
+        setTimeout(() => {
+          renderMathInElement(container, {
+            delimiters: [
+              { left: '$$', right: '$$', display: true },
+              { left: '$', right: '$', display: false },
+              { left: '\\(', right: '\\)', display: false },
+              { left: '\\[', right: '\\]', display: true }
+            ],
+            throwOnError: false
+          });
+        }, 50);
+      }
+    }
+
+    function renderVaultScreen(container) {
+      container.innerHTML = `
+        <div class="bg-stadium-800/90 border border-stadium-700 rounded-2xl p-6 sm:p-10 stadium-glow text-center space-y-8">
+          
+          <div class="max-w-md mx-auto space-y-3">
+            <div class="w-20 h-20 mx-auto rounded-3xl ${state.vaultUnlocked ? 'bg-trophy-500/20 text-trophy-400 border-2 border-trophy-500 gold-glow' : 'bg-stadium-900 text-gray-500 border border-stadium-700'} flex items-center justify-center text-4xl transition-all duration-500">
+              <i class="fa-solid ${state.vaultUnlocked ? 'fa-trophy' : 'fa-vault'}"></i>
+            </div>
+            <h2 class="text-2xl font-black text-white uppercase tracking-wider">Championship Vault Door</h2>
+            <p class="text-xs text-gray-400">Enter the 6-digit vault passcode acquired from completing all 6 sports challenges.</p>
+          </div>
+
+          <!-- Interactive Passcode Keyboard -->
+          <div class="max-w-sm mx-auto bg-stadium-900 p-6 rounded-2xl border border-stadium-700 shadow-2xl space-y-5">
+            <div class="text-xs text-gray-400 font-semibold uppercase tracking-widest">6-Digit Keypad Input</div>
+            
+            <input 
+              type="text" 
+              id="vaultPasscodeInput" 
+              maxlength="6"
+              placeholder="------"
+              value="${state.vaultUnlocked ? FULL_VAULT_CODE : ''}"
+              class="w-full text-center text-3xl font-mono font-bold tracking-widest bg-stadium-800 border-2 border-stadium-600 focus:border-trophy-500 text-trophy-400 py-3 rounded-xl focus:outline-none shadow-inner"
+            />
+
+            <div class="grid grid-cols-3 gap-2 text-sm font-mono">
+              ${[1,2,3,4,5,6,7,8,9,0].map(n => `
+                <button onclick="appendVaultInput('${n}')" class="bg-stadium-800 hover:bg-stadium-700 text-white font-bold py-2.5 rounded-lg border border-stadium-700 active:scale-95 transition">${n}</button>
+              `).join('')}
+              <button onclick="clearVaultInput()" class="bg-red-900/40 hover:bg-red-800/60 text-red-300 font-bold py-2.5 rounded-lg border border-red-500/30 active:scale-95 transition">CLR</button>
+            </div>
+
+            <button 
+              onclick="verifyVaultCode()" 
+              class="w-full bg-gradient-to-r from-trophy-500 to-trophy-600 hover:from-trophy-400 hover:to-trophy-500 text-stadium-900 font-black py-3 rounded-xl text-base shadow-lg transition active:scale-95 uppercase tracking-wider"
+            >
+              <i class="fa-solid fa-lock-open mr-2"></i> Unlock Vault
+            </button>
+          </div>
+
+          <!-- VICTORY RECAP SECTION -->
+          <div id="victorySection" class="${state.vaultUnlocked ? 'block' : 'hidden'} mt-10 p-6 bg-stadium-900 border-2 border-trophy-500/60 rounded-2xl gold-glow space-y-6">
+            <div class="space-y-2">
+              <span class="px-3 py-1 rounded-full bg-trophy-500/20 text-trophy-400 text-xs font-bold uppercase tracking-wider border border-trophy-500/40">Championship Victory</span>
+              <h3 class="text-3xl font-black text-white">CONGRATULATIONS!</h3>
+              <p class="text-sm text-gray-300 max-w-lg mx-auto">You have unlocked the Championship Vault and mastered Binomial Distributions for AP Statistics!</p>
+            </div>
+
+            <!-- Stats Recap Grid -->
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-lg mx-auto">
+              <div class="bg-stadium-800 p-4 rounded-xl border border-stadium-700 text-center">
+                <span class="text-[10px] text-gray-400 uppercase font-bold block mb-1">Total Time</span>
+                <span class="text-xl font-bold font-mono text-emerald-400" id="finalTimeDisplay">--:--</span>
+              </div>
+              <div class="bg-stadium-800 p-4 rounded-xl border border-stadium-700 text-center">
+                <span class="text-[10px] text-gray-400 uppercase font-bold block mb-1">Rooms Solved</span>
+                <span class="text-xl font-bold font-mono text-trophy-400">6 / 6</span>
+              </div>
+              <div class="bg-stadium-800 p-4 rounded-xl border border-stadium-700 text-center">
+                <span class="text-[10px] text-gray-400 uppercase font-bold block mb-1">Total Attempts</span>
+                <span class="text-xl font-bold font-mono text-cyan-400" id="totalAttemptsDisplay">6</span>
+              </div>
+            </div>
+
+            <button onclick="openCertificateModal()" class="bg-turf-600 hover:bg-turf-500 text-white font-bold px-8 py-3 rounded-xl shadow-xl transition stadium-glow inline-flex items-center space-x-2">
+              <i class="fa-solid fa-award text-lg"></i>
+              <span>View & Print Completion Certificate</span>
+            </button>
+          </div>
+
+        </div>
+      `;
+    }
+
+    // ==========================================
+    // CONTROLLER & INTERACTION LOGIC
+    // ==========================================
+    function switchTab(tabId) {
+      state.activeTab = tabId;
+      renderTabs();
+      renderRoomContent();
+    }
+
+    function toggleHint(roomId) {
+      const hintBox = document.getElementById(`hintBox-${roomId}`);
+      if (hintBox) {
+        hintBox.classList.toggle('hidden');
+      }
+    }
+
+    function handleAnswerSubmit(e, roomId) {
+      e.preventDefault();
+      const inputEl = document.getElementById(`roomInput-${roomId}`);
+      const feedbackEl = document.getElementById(`feedback-${roomId}`);
+      if (!inputEl || !feedbackEl) return;
+
+      const rawVal = inputEl.value.trim();
+      const room = ROOMS[roomId - 1];
+
+      state.attempts[roomId - 1]++;
+      state.userAnswers[roomId - 1] = rawVal;
+
+      const isCorrect = room.acceptedAnswers.includes(rawVal);
+
+      if (isCorrect) {
+        state.solved[roomId - 1] = true;
+        playSound('success');
+
+        confetti({
+          particleCount: 60,
+          spread: 60,
+          origin: { y: 0.7 }
+        });
+
+        feedbackEl.className = "p-4 bg-turf-500/20 border border-turf-500 rounded-xl text-turf-300 text-sm font-semibold flex items-center space-x-3";
+        feedbackEl.innerHTML = `
+          <i class="fa-solid fa-circle-check text-xl text-turf-400"></i>
+          <div>
+            <div>Correct! Vault Digit #${roomId} Unlocked: <strong class="text-trophy-400 text-lg font-mono">[ ${room.digit} ]</strong></div>
+            <p class="text-xs text-gray-300 font-normal">Step-by-step AP solution revealed below.</p>
+          </div>
+        `;
+        feedbackEl.classList.remove('hidden');
+
+        renderTabs();
+        renderVaultSlots();
+        setTimeout(() => renderRoomContent(), 1200);
+
+      } else {
+        playSound('error');
+        feedbackEl.className = "p-4 bg-red-950/60 border border-red-500/60 rounded-xl text-red-300 text-xs font-semibold flex items-center space-x-3";
+        feedbackEl.innerHTML = `
+          <i class="fa-solid fa-triangle-exclamation text-lg text-red-400"></i>
+          <div>
+            <div>Incorrect answer. Please try again!</div>
+            <p class="text-gray-400 font-normal text-[11px] mt-0.5">Tip: Check decimal precision (e.g. 0.3020) and whether to use binomdist bounds in Desmos.</p>
+          </div>
+        `;
+        feedbackEl.classList.remove('hidden');
+      }
+    }
+
+    // Vault keypad logic
+    function appendVaultInput(char) {
+      const input = document.getElementById('vaultPasscodeInput');
+      if (input && input.value.length < 6) {
+        input.value += char;
+      }
+    }
+
+    function clearVaultInput() {
+      const input = document.getElementById('vaultPasscodeInput');
+      if (input) input.value = '';
+    }
+
+    function verifyVaultCode() {
+      const input = document.getElementById('vaultPasscodeInput');
+      if (!input) return;
+
+      const entered = input.value.trim();
+
+      if (entered === FULL_VAULT_CODE) {
+        state.vaultUnlocked = true;
+        playSound('victory');
+
+        const duration = 3 * 1000;
+        const end = Date.now() + duration;
+
+        (function frame() {
+          confetti({
+            particleCount: 5,
+            angle: 60,
+            spread: 55,
+            origin: { x: 0 }
+          });
+          confetti({
+            particleCount: 5,
+            angle: 120,
+            spread: 55,
+            origin: { x: 1 }
+          });
+
+          if (Date.now() < end) {
+            requestAnimationFrame(frame);
+          }
+        }());
+
+        renderTabs();
+        renderRoomContent();
+
+        const elapsedSecs = (45 * 60) - state.timerSeconds;
+        const mins = Math.floor(elapsedSecs / 60);
+        const secs = elapsedSecs % 60;
+        const formattedTime = `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+
+        const finalTimeEl = document.getElementById('finalTimeDisplay');
+        if (finalTimeEl) finalTimeEl.innerText = formattedTime;
+
+        const totalAttempts = state.attempts.reduce((a, b) => a + b, 0);
+        const totalAttemptsEl = document.getElementById('totalAttemptsDisplay');
+        if (totalAttemptsEl) totalAttemptsEl.innerText = totalAttempts;
+
+      } else {
+        playSound('error');
+        alert("Incorrect passcode! Ensure all 6 digits are unlocked from Rooms 1 to 6.");
+      }
+    }
+
+    // ==========================================
+    // TIMER ENGINE
+    // ==========================================
+    function startTimer() {
+      if (state.timerInterval) clearInterval(state.timerInterval);
+      
+      state.timerInterval = setInterval(() => {
+        if (!state.timerRunning) return;
+
+        if (state.timerSeconds > 0) {
+          state.timerSeconds--;
+          updateTimerDisplay();
+        } else {
+          clearInterval(state.timerInterval);
+          alert("Time is up! Review your solved rooms and attempt the vault passcode.");
+        }
+      }, 1000);
+    }
+
+    function updateTimerDisplay() {
+      const mins = Math.floor(state.timerSeconds / 60);
+      const secs = state.timerSeconds % 60;
+      const display = `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+      
+      const timerEl = document.getElementById('timerDisplay');
+      const timerContainer = document.getElementById('timerContainer');
+      if (timerEl) timerEl.innerText = display;
+
+      if (state.timerSeconds < 5 * 60 && timerContainer) {
+        timerContainer.classList.add('pulse-urgent', 'border-red-500');
+        if (timerEl) timerEl.classList.replace('text-emerald-400', 'text-red-400');
+      }
+    }
+
+    // ==========================================
+    // MODAL & CERTIFICATE HANDLERS
+    // ==========================================
+    function openCertificateModal() {
+      const name = prompt("Enter student / team name for certificate:", "AP Stat Champion");
+      if (name) {
+        document.getElementById('certStudentName').innerText = name;
+      }
+      
+      const elapsedSecs = (45 * 60) - state.timerSeconds;
+      const mins = Math.floor(elapsedSecs / 60);
+      const secs = elapsedSecs % 60;
+      document.getElementById('certTimeTaken').innerText = `${mins}m ${secs}s`;
+
+      const now = new Date();
+      document.getElementById('certDate').innerText = `Date: ${now.toLocaleDateString()}`;
+
+      document.getElementById('certificateModal').classList.remove('hidden');
+    }
+
+    function initDesmosSimulator() {
+      const computeBtn = document.getElementById('btnComputeDesmos');
+      if (!computeBtn) return;
+
+      computeBtn.addEventListener('click', () => {
+        const n = parseInt(document.getElementById('desmos-n').value);
+        const p = parseFloat(document.getElementById('desmos-p').value);
+        const min = parseInt(document.getElementById('desmos-min').value);
+        const max = parseInt(document.getElementById('desmos-max').value);
+
+        if (isNaN(n) || isNaN(p) || isNaN(min) || isNaN(max)) return;
+
+        let prob = 0;
+        for (let k = min; k <= max; k++) {
+          prob += binompdf(n, p, k);
+        }
+
+        const mean = n * p;
+        const sd = Math.sqrt(n * p * (1 - p));
+
+        document.getElementById('desmosCmdPreview').innerText = `binomdist(${n}, ${p}) [Min: ${min}, Max: ${max}]`;
+        document.getElementById('desmosProbResult').innerText = prob.toFixed(4);
+        document.getElementById('desmosMeanResult').innerText = mean.toFixed(2);
+        document.getElementById('desmosSdResult').innerText = sd.toFixed(4);
+        document.getElementById('desmosOutput').classList.remove('hidden');
+      });
+    }
+
+    // ==========================================
+    // INITIALIZATION & EVENT LISTENERS
+    // ==========================================
+    window.addEventListener('DOMContentLoaded', () => {
+      renderTabs();
+      renderVaultSlots();
+      renderRoomContent();
+      startTimer();
+      initDesmosSimulator();
+
+      // Timer Controls
+      document.getElementById('toggleTimerBtn').addEventListener('click', () => {
+        state.timerRunning = !state.timerRunning;
+        const icon = document.getElementById('timerStateIcon');
+        if (state.timerRunning) {
+          icon.className = 'fa-solid fa-pause';
+        } else {
+          icon.className = 'fa-solid fa-play';
+        }
+      });
+
+      document.getElementById('resetTimerBtn').addEventListener('click', () => {
+        if (confirm("Reset countdown timer to 45:00?")) {
+          state.timerSeconds = 45 * 60;
+          updateTimerDisplay();
+        }
+      });
+
+      // Sound Toggle
+      document.getElementById('audioToggleBtn').addEventListener('click', () => {
+        state.soundEnabled = !state.soundEnabled;
+        const icon = document.getElementById('audioIcon');
+        const text = document.getElementById('audioStatusText');
+
+        if (state.soundEnabled) {
+          icon.className = 'fa-solid fa-volume-high text-emerald-400';
+          text.innerText = 'Sound ON';
+        } else {
+          icon.className = 'fa-solid fa-volume-xmark text-gray-500';
+          text.innerText = 'Sound OFF';
+        }
+      });
+
+      // Formula Drawer Toggles
+      const drawer = document.getElementById('formulaDrawer');
+      document.getElementById('openFormulaBtn').addEventListener('click', () => {
+        drawer.classList.remove('hidden');
+      });
+
+      document.getElementById('closeFormulaBtn').addEventListener('click', () => {
+        drawer.classList.add('hidden');
+      });
+
+      document.getElementById('closeFormulaBg').addEventListener('click', () => {
+        drawer.classList.add('hidden');
+      });
+
+      // Certificate Modal Close
+      document.getElementById('closeCertBtn').addEventListener('click', () => {
+        document.getElementById('certificateModal').classList.add('hidden');
+      });
+    });
+  </script>
+</body>
+</html>
